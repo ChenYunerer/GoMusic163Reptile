@@ -9,4 +9,5 @@ var (
 	fileName         = "./playlistTempFile.txt" //歌单数据临时文件
 	SEPARATOR        = "<-->"                   //歌单数据字段间分隔符
 	playlistTempList = make([]PlaylistTemp, 0)
+	dataSourceName   = ""
 )

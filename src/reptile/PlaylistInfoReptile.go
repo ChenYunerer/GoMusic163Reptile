@@ -103,7 +103,7 @@ func reptilePlaylistInfo() {
 
 //保存到数据库
 func save2DB() {
-	db, err := sql.Open("mysql", "root:12345cyCY@tcp(rm-2ze5sllf9zl6e9j39uo.mysql.rds.aliyuncs.com:3306)/opern?charset=utf8")
+	db, err := sql.Open("mysql", dataSourceName)
 	if err != nil {
 		log.E(TAG, err)
 		return
