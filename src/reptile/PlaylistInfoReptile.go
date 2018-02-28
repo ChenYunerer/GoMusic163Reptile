@@ -42,7 +42,7 @@ func ReptilePlaylistInfo() {
 //爬取歌单数据
 func reptilePlaylistInfo() {
 	for index, playlist := range playlistTempList {
-		log.I(TAG, string(index))
+		log.I(TAG, index)
 		reader, err := net.GetRequestForReader(playlist.url)
 		if err != nil {
 			log.I(TAG, err.Error())
@@ -109,9 +109,15 @@ func save2DB() {
 		return
 	}
 	defer db.Close()
-	//todo tags musicIds待处理
-	for _, item := range playlistInfoList {
-		res, err := db.Exec("REPLACE INTO tbl_163music_playlist_info VALUES (?,?,?,?,?,?,?,?,?,?,?)", item.id, item.title, item.img, item.url, item.uploadTime, item.playCount, item.collectionCount, item.commentCount, "todo", item.description, "todo")
+	for index, item := range playlistInfoList {
+		log.I(TAG, "当前数据index", index)
+		res, err := db.Exec("REPLACE INTO tbl_163music_playlist_info VALUES (?,?,?,?,?,?,?,?,?)", item.id, item.title, item.img, item.url, item.uploadTime, item.playCount, item.collectionCount, item.commentCount, item.description)
+		for _, tag := range item.tags {
+			db.Exec("REPLACE INTO tbl_163music_playlist_tag_info VALUES (?,?)", item.id, tag)
+		}
+		for _, musicId := range item.musicIds {
+			db.Exec("REPLACE INTO tbl_163music_playlist_song_info VALUES (?,?)", item.id, musicId)
+		}
 		if err != nil {
 			log.E(TAG, err)
 		} else {
