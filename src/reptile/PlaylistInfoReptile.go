@@ -21,7 +21,6 @@ type PlaylistInfo struct {
 	url             string
 	uploadTime      string
 	playCount       int
-	collectionCount int
 	commentCount    int
 	tags            []string
 	description     string
@@ -36,7 +35,7 @@ var (
 func ReptilePlaylistInfo() {
 	readFromFile()
 	reptilePlaylistInfo()
-	save2DB()
+	savePlaylist2DB()
 }
 
 //爬取歌单数据
@@ -50,7 +49,7 @@ func reptilePlaylistInfo() {
 		document, _ := goquery.NewDocumentFromReader(reader)
 		idStr, _ := document.Find("#content-operation").Attr("data-rid")
 		id, _ := strconv.Atoi(idStr)
-		title := document.Find(".f-ff2, f-brk").First().Text()
+		title := document.Find(".f-ff2.f-brk").First().Text()
 		img, _ := document.Find(".j-img").First().Attr("src")
 		url := playlist.url
 		var uploadTime string
@@ -64,9 +63,6 @@ func reptilePlaylistInfo() {
 		}
 		playCountStr := document.Find("#play-count").Text()
 		playCount, _ := strconv.Atoi(playCountStr)
-		//todo collectionCount的值有问题待修复
-		collectionCountStr, _ := document.Find(".u-btni, u-btni-fav").First().Attr("data-count")
-		collectionCount, _ := strconv.Atoi(collectionCountStr)
 		commentCountStr := document.Find("#cnt_comment_count").Text()
 		commentCount, _ := strconv.Atoi(commentCountStr)
 		var tags []string
@@ -89,7 +85,6 @@ func reptilePlaylistInfo() {
 			url:             url,
 			uploadTime:      uploadTime,
 			playCount:       playCount,
-			collectionCount: collectionCount,
 			commentCount:    commentCount,
 			tags:            tags,
 			description:     description,
@@ -102,7 +97,7 @@ func reptilePlaylistInfo() {
 }
 
 //保存到数据库
-func save2DB() {
+func savePlaylist2DB() {
 	db, err := sql.Open("mysql", dataSourceName)
 	if err != nil {
 		log.E(TAG, err)
@@ -111,7 +106,7 @@ func save2DB() {
 	defer db.Close()
 	for index, item := range playlistInfoList {
 		log.I(TAG, "当前数据index", index)
-		res, err := db.Exec("REPLACE INTO tbl_163music_playlist_info VALUES (?,?,?,?,?,?,?,?,?)", item.id, item.title, item.img, item.url, item.uploadTime, item.playCount, item.collectionCount, item.commentCount, item.description)
+		res, err := db.Exec("REPLACE INTO tbl_163music_playlist_info VALUES (?,?,?,?,?,?,?,?)", item.id, item.title, item.img, item.url, item.uploadTime, item.playCount, item.commentCount, item.description)
 		for _, tag := range item.tags {
 			db.Exec("REPLACE INTO tbl_163music_playlist_tag_info VALUES (?,?)", item.id, tag)
 		}

@@ -36,7 +36,7 @@ func reptilePlaylistTemp(url string) {
 		log.I(TAG, err.Error())
 	}
 	document, _ := goquery.NewDocumentFromReader(reader)
-	document.Find(".u-cover, u-cover-1").Each(func(i int, selection *goquery.Selection) {
+	document.Find(".u-cover.u-cover-1").Each(func(i int, selection *goquery.Selection) {
 		img, _ := selection.Find("img").First().Attr("src")
 		title, _ := selection.Find("a").First().Attr("title")
 		href, _ := selection.Find("a").First().Attr("href")
@@ -50,7 +50,7 @@ func reptilePlaylistTemp(url string) {
 		playlistTempList = append(playlistTempList, playlist)
 		log.I(TAG, title+" "+href+" "+img+" "+views)
 	})
-	nextPageHref, exists := document.Find(".zbtn, znxt").Last().Attr("href")
+	nextPageHref, exists := document.Find(".zbtn.znxt").Last().Attr("href")
 	if exists && nextPageHref != "" && !strings.Contains(nextPageHref, "javascript:void(0)") {
 		reptilePlaylistTemp(baseUrl + nextPageHref)
 	} else {
