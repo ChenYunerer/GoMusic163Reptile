@@ -31,7 +31,7 @@ func QueryAllPlaylistSongIdFromDB() ([]int, error) {
 		return nil, err
 	}
 	defer db.Close()
-	rows, err := db.Query("SELECT DISTINCT songId FROM tbl_163music_playlist_song_info")
+	rows, err := db.Query("SELECT DISTINCT songId FROM tbl_163music_playlist_song_info LIMIT 15000, 5000")
 	if err != nil {
 		log.E(TAG, err)
 		return nil, err
@@ -56,23 +56,21 @@ func QueryAllPlaylistSongIdFromDB() ([]int, error) {
 func ReptileSongById(songIds []int) ([]Song, error) {
 	var songs = make([]Song, 0)
 	for index, songId := range songIds {
-		log.I(TAG, "当前进度", index, "of", len(songIds))
+		log.I(TAG, "当前进度", index, "of", len(songIds), songId)
 		url := "http://music.163.com/song?id=" + strconv.Itoa(songId)
-		log.I(url)
 		reader, err := net.GetRequestForReader(url)
 		if err != nil {
 			log.E(TAG, err)
 			return nil, err
 		}
 		document, _ := goquery.NewDocumentFromReader(reader)
-		log.I(document.Html())
+		//log.I(document.Html())
 		id := songId
 		title := document.Find(".f-ff2").First().Text()
 		subtitle := document.Find(".subtit.f-fs1.f-ff2").First().Text()
 		img, _ := document.Find(".j-img").First().Attr("src")
 		var artist []string
 		var artistId []int
-
 		document.Find(".des.s-fc4").First().Find("a").Each(func(index int, selection *goquery.Selection) {
 			artist = append(artist, selection.Text())
 			href, _ := selection.Attr("href")
@@ -134,7 +132,8 @@ func SaveSong2DB(songs []Song) error {
 		if err != nil {
 			log.E(TAG, err)
 		} else {
-			log.I(TAG, result)
+			rows, _ := result.RowsAffected()
+			log.I(TAG, rows)
 		}
 	}
 	return nil
