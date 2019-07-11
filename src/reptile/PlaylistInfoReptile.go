@@ -1,46 +1,64 @@
 package reptile
 
 import (
-	"os"
+	"GoMusic163Reptile/src/net"
+	"GoMusic163Reptile/src/util"
 	"bufio"
-	"io"
-	"strings"
-	"reptile/src/util"
 	"database/sql"
-	"github.com/PuerkitoBio/goquery"
-	"strconv"
 	"encoding/json"
-	"reptile/src/net"
+	"github.com/PuerkitoBio/goquery"
 	_ "github.com/go-sql-driver/mysql"
+	"io"
+	"os"
+	"strconv"
+	"strings"
+	"sync"
 )
 
 type PlaylistInfo struct {
-	id              int
-	title           string
-	img             string
-	url             string
-	uploadTime      string
-	playCount       int
-	commentCount    int
-	tags            []string
-	description     string
-	musicIds        []int
+	id           int
+	title        string
+	img          string
+	url          string
+	uploadTime   string
+	playCount    int
+	commentCount int
+	tags         []string
+	description  string
+	musicIds     []int
 }
 
 var (
 	playlistInfoList = make([]PlaylistInfo, 0)
+	wg               = sync.WaitGroup{}
 )
 
 //爬取歌单详细数据
 func ReptilePlaylistInfo() {
 	readFromFile()
-	reptilePlaylistInfo()
+	threadNum := 12
+	a := len(playlistTempList) / threadNum
+	for i := 0; i < threadNum; i++ {
+		var c []PlaylistTemp
+		if i == threadNum-1 {
+			c = playlistTempList[i*a:]
+		} else {
+			c = playlistTempList[i*a : (i+1)*a]
+		}
+
+		go func() {
+			wg.Add(1)
+			defer wg.Done()
+			reptilePlaylistInfo(c)
+		}()
+	}
+	wg.Wait()
 	savePlaylist2DB()
 }
 
 //爬取歌单数据
-func reptilePlaylistInfo() {
-	for index, playlist := range playlistTempList {
+func reptilePlaylistInfo(date []PlaylistTemp) {
+	for index, playlist := range date {
 		log.I(TAG, index)
 		reader, err := net.GetRequestForReader(playlist.url)
 		if err != nil {
@@ -79,16 +97,16 @@ func reptilePlaylistInfo() {
 			musicIds = append(musicIds, musicId)
 		})
 		playlistInfo := PlaylistInfo{
-			id:              id,
-			title:           title,
-			img:             img,
-			url:             url,
-			uploadTime:      uploadTime,
-			playCount:       playCount,
-			commentCount:    commentCount,
-			tags:            tags,
-			description:     description,
-			musicIds:        musicIds,
+			id:           id,
+			title:        title,
+			img:          img,
+			url:          url,
+			uploadTime:   uploadTime,
+			playCount:    playCount,
+			commentCount: commentCount,
+			tags:         tags,
+			description:  description,
+			musicIds:     musicIds,
 		}
 		playlistInfoList = append(playlistInfoList, playlistInfo)
 		log.I(TAG, playlistInfo)
@@ -106,18 +124,28 @@ func savePlaylist2DB() {
 	defer db.Close()
 	for index, item := range playlistInfoList {
 		log.I(TAG, "当前数据index", index)
-		res, err := db.Exec("REPLACE INTO tbl_163music_playlist_info VALUES (?,?,?,?,?,?,?,?)", item.id, item.title, item.img, item.url, item.uploadTime, item.playCount, item.commentCount, item.description)
+		res, err := db.Exec("INSERT INTO music163_playlist_info_tbl VALUES (?,?,?,?,?,?,?,?)", item.id, item.title, item.img, item.url, item.uploadTime, item.playCount, item.commentCount, item.description)
+		if err != nil {
+			log.E(TAG, err)
+			continue
+		}
 		for _, tag := range item.tags {
-			db.Exec("REPLACE INTO tbl_163music_playlist_tag_info VALUES (?,?)", item.id, tag)
+			_, err := db.Exec("INSERT INTO music163_playlist_tag_info_tbl(playListId, playListTag) VALUES (?,?)", item.id, tag)
+			if err != nil {
+				log.E(TAG, err)
+			}
 		}
 		for _, musicId := range item.musicIds {
-			db.Exec("REPLACE INTO tbl_163music_playlist_song_info VALUES (?,?)", item.id, musicId)
+			_, err := db.Exec("INSERT INTO music163_playlist_song_info_tbl(playListId, songId) VALUES (?,?)", item.id, musicId)
+			if err != nil {
+				log.E(TAG, err)
+			}
 		}
 		if err != nil {
 			log.E(TAG, err)
 		} else {
 			row, _ := res.RowsAffected()
-			log.I(TAG, row)
+			log.I(TAG, row, "tags len:", len(item.tags), "songs len:", len(item.musicIds))
 		}
 	}
 }
@@ -148,5 +176,8 @@ func readFromFile() {
 			playCount: splits[3],
 		}
 		playlistTempList = append(playlistTempList, playlistTemp)
+		if len(playlistTempList) == 20 {
+			return
+		}
 	}
 }

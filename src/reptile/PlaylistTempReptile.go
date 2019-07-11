@@ -1,12 +1,12 @@
 package reptile
 
 import (
+	"GoMusic163Reptile/src/net"
+	"GoMusic163Reptile/src/util"
 	"github.com/PuerkitoBio/goquery"
-	"strings"
-	"reptile/src/net"
-	"reptile/src/util"
-	"os"
 	"io"
+	"os"
+	"strings"
 )
 
 type PlaylistTemp struct {
@@ -17,7 +17,7 @@ type PlaylistTemp struct {
 }
 
 var (
-	firstUrl = "http://music.163.com/discover/playlist" //爬虫开始访问的第一个URL
+	firstUrl = "http://music.163.com/discover/playlist?order=new" //爬虫开始访问的第一个URL
 )
 
 //爬取歌单临时数据

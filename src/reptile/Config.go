@@ -1,6 +1,6 @@
 package reptile
 
-import "reptile/src/util"
+import "GoMusic163Reptile/src/util"
 
 var (
 	log              = util.Log{}
@@ -10,6 +10,6 @@ var (
 	SEPARATOR        = "<-->"                   //歌单数据字段间分隔符
 	playlistTempList = make([]PlaylistTemp, 0)
 	dbUserName       = "root"
-	dbPassword       = "12345cyCY"
-	dataSourceName   = dbUserName + ":" + dbPassword + "@tcp(rm-2ze5sllf9zl6e9j39uo.mysql.rds.aliyuncs.com:3306)/opern?charset=utf8"
+	dbPassword       = "Qmkj@0622."
+	dataSourceName   = dbUserName + ":" + dbPassword + "@tcp(39.98.55.88:10030)/music163_reptile?charset=utf8"
 )
